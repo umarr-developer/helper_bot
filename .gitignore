@@ -1,5 +1,5 @@
 # Byte-compiled / optimized / DLL files
-
+.fleet
 .vscode
 config.yml
 config-local.yml
