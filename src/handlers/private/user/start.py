@@ -1,7 +1,7 @@
 from aiogram import Router, types
 from aiogram.filters import Command
 
-from src.handlers.private.user.menu import menu
+from src.handlers.private.user.menu import on_menu
 from src.models import User
 
 router = Router()
@@ -17,4 +17,4 @@ async def on_start(message: types.Message, user: User, db):
         await message.answer(text)
 
     else:
-        await menu(message)
+        await on_menu(message)

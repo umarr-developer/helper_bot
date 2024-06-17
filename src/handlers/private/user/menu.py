@@ -5,7 +5,7 @@ router = Router()
 
 
 @router.message(Command(commands=['menu']))
-async def menu(message: types.Message):
+async def on_menu(message: types.Message):
     text = 'Вы главном меню'
     keyboard = types.ReplyKeyboardMarkup(
         resize_keyboard=True,
