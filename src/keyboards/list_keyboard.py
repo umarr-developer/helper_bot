@@ -24,9 +24,9 @@ class ListKeyboard:
         if index != 0 and len(self.buttons) > index + self.element_count:
             action_buttons.append(self.previous_button)
             action_buttons.append(self.next_button)
-        elif index == 0:
+        elif index == 0 and len(self.buttons) > index + self.element_count:
             action_buttons.append(self.next_button)
-        elif len(self.buttons) <= index + self.element_count:
+        elif len(self.buttons) <= index + self.element_count and index != 0:
             action_buttons.append(self.previous_button)
 
         return types.InlineKeyboardMarkup(
