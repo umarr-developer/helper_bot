@@ -1,4 +1,4 @@
-from aiogram import types, Router
+from aiogram import types, Router, F
 from aiogram.filters import Command
 
 router = Router()
@@ -10,15 +10,20 @@ async def on_admin_panel(message: types.Message):
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                types.InlineKeyboardButton(text='👨‍🔧 Управление операторами', callback_data='admin_manage_operators')
+                types.InlineKeyboardButton(text='👨‍🔧 Управление операторами',
+                                           callback_data='admin_manage_operators')
             ],
             [
-                types.InlineKeyboardButton(text='👨‍💼 Пользователи', callback_data='admin_manage_users'),
-                types.InlineKeyboardButton(text='❓ Вопросы FAQ', callback_data='admin_manage_faq')
+                types.InlineKeyboardButton(text='👨‍💼 Пользователи',
+                                           callback_data='admin_manage_users'),
+                types.InlineKeyboardButton(text='❓ Вопросы FAQ',
+                                           callback_data='admin_manage_faq')
             ],
             [
-                types.InlineKeyboardButton(text='⚙️ Настройки', callback_data='admin_settings'),
-                types.InlineKeyboardButton(text='📊 Статистика', callback_data='admin_statistic')
+                types.InlineKeyboardButton(text='⚙️ Настройки',
+                                           callback_data='admin_settings'),
+                types.InlineKeyboardButton(text='📊 Статистика',
+                                           callback_data='admin_statistic')
             ],
             [
                 types.InlineKeyboardButton(text='↩️ Перейти в панель пользователя',
@@ -26,5 +31,7 @@ async def on_admin_panel(message: types.Message):
             ]
         ]
     )
-    
+
     await message.answer(text, reply_markup=keyboard)
+
+
