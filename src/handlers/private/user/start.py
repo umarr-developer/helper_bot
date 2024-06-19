@@ -1,4 +1,4 @@
-from aiogram import Router, types
+from aiogram import Router, types, F
 from aiogram.filters import Command
 
 from src.handlers.private.user.menu import on_menu
@@ -7,8 +7,12 @@ from src.models import User
 router = Router()
 
 
+@router.callback_query(F.data == 'admin_to_user_panel')
 @router.message(Command(commands=['start']))
-async def on_start(message: types.Message, user: User, db):
+async def on_start(message: types.Message | types.CallbackQuery, user: User, db):
+    if isinstance(message, types.CallbackQuery):
+        message = message.message
+        
     if not user:
         user_id = message.from_user.id
         await User.new(db, user_id=user_id)
