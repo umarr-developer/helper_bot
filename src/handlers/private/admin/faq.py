@@ -1,7 +1,8 @@
 from aiogram import types, F, Router
-from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+
+from src.models.questions import Question
 
 router = Router()
 
@@ -30,21 +31,21 @@ async def on_admin_faq(callback: types.CallbackQuery):
 
 @router.callback_query(F.data == 'admin_add_question')
 async def on_admin_add_question(callback: types.CallbackQuery, state: FSMContext):
-    await state.set_state(AddQuestionState.answer)
+    await state.set_state(AddQuestionState.question)
     text = 'Введите вопрос'
     await callback.message.answer(text)
 
 
-@router.message(AddQuestionState.answer)
+@router.message(AddQuestionState.question)
 async def on_admin_add_question_state_question(message: types.Message, state: FSMContext):
-    await state.set_state(AddQuestionState.accept)
+    await state.set_state(AddQuestionState.answer)
     await state.update_data({'question': message.text})
 
     text = 'Введите ответ к вопросу'
     await message.answer(text)
 
 
-@router.message(AddQuestionState.accept)
+@router.message(AddQuestionState.answer)
 async def on_admin_add_question_state_answer(message: types.Message, state: FSMContext):
     await state.set_state(AddQuestionState.accept)
     await state.update_data({'answer': message.text})
@@ -56,10 +57,24 @@ async def on_admin_add_question_state_answer(message: types.Message, state: FSMC
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                types.InlineKeyboardButton(text='Сохранить', callback_data='admin_save_auestion'),
-                types.InlineKeyboardButton(text='Отмена', callback_data='cancel')
+                types.InlineKeyboardButton(text='✅ Сохранить', callback_data='admin_save_question'),
+                types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel')
             ]
         ]
     )
-    
+
     await message.answer(text, reply_markup=keyboard)
+
+
+@router.callback_query(F.data == 'admin_save_question', AddQuestionState.accept)
+async def on_admin_add_question_state_accept(callback: types.CallbackQuery, state: FSMContext, db):
+    data = await state.get_data()
+    question = data.get('question')
+    answer = data.get('answer')
+
+    await Question.new(db, question, answer)
+
+    text = 'Вопрос успешно сохранен'
+    await callback.message.answer(text)
+
+    await state.clear()
