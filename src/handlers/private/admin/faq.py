@@ -61,7 +61,7 @@ async def on_admin_add_question_state_answer(message: types.Message, state: FSMC
         inline_keyboard=[
             [
                 types.InlineKeyboardButton(text='✅ Сохранить', callback_data='admin_save_question'),
-                types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel')
+                types.InlineKeyboardButton(text='❌ Отмена', callback_data='admin_cancel')
             ]
         ]
     )
