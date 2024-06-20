@@ -1,5 +1,5 @@
 from aiogram import Router, types, F
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 
 from src.handlers.private.user.menu import on_menu
 from src.models import User
@@ -7,8 +7,8 @@ from src.models import User
 router = Router()
 
 
-@router.callback_query(F.data == 'admin_to_user_panel')
-@router.message(Command(commands=['start']))
+@router.callback_query(F.data == 'admin_to_user_panel', StateFilter(None))
+@router.message(Command(commands=['start']), StateFilter(None))
 async def on_start(message: types.Message | types.CallbackQuery, user: User, db):
     if isinstance(message, types.CallbackQuery):
         message = message.message

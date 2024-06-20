@@ -1,10 +1,10 @@
 from aiogram import types, Router
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 
 router = Router()
 
 
-@router.message(Command(commands=['menu']))
+@router.message(Command(commands=['menu']), StateFilter(None))
 async def on_menu(message: types.Message):
     text = 'Вы главном меню'
     keyboard = types.ReplyKeyboardMarkup(
