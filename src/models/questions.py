@@ -17,14 +17,14 @@ class Question(Base):
             await session.commit()
 
     @classmethod
-    async def get(cls, db_session: sessionmaker, _id: int):
+    async def get(cls, db_session: sessionmaker, _id: int) -> tuple['Question']:
         sql = select(cls).where(cls.id == _id)
         async with db_session() as session:
             response = await session.execute(sql)
         return response.fetchone()
     
     @classmethod
-    async def all(cls, db_session: sessionmaker):
+    async def all(cls, db_session: sessionmaker) -> list[tuple['Question']]:
         sql = select(cls)
         async with db_session() as session:
             response = await session.execute(sql)
