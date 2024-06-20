@@ -1,5 +1,4 @@
-from aiogram import types, Router, F
-from aiogram.filters import Command
+from aiogram import types, Router
 from aiogram.filters import Command, StateFilter
 
 router = Router()

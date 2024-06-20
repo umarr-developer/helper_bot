@@ -1,7 +1,8 @@
 from aiogram import types, F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.filters import Command, StateFilter
+
 from src.models.questions import Question
 
 router = Router()

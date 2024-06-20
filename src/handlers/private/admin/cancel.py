@@ -10,8 +10,8 @@ async def on_admin_cancel(message: types.Message | types.CallbackQuery):
     if isinstance(message, types.CallbackQuery):
         await message.answer()
         await message.message.edit_reply_markup()
-        
+
         message = message.message
-    
+
     text = 'Действие отменено'
     await message.answer(text)
