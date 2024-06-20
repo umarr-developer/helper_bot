@@ -31,6 +31,9 @@ async def on_admin_faq(callback: types.CallbackQuery):
 
 @router.callback_query(F.data == 'admin_add_question')
 async def on_admin_add_question(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.edit_reply_markup(reply_markup=None)
+
     await state.set_state(AddQuestionState.question)
     text = 'Введите вопрос'
     await callback.message.answer(text)
@@ -68,6 +71,9 @@ async def on_admin_add_question_state_answer(message: types.Message, state: FSMC
 
 @router.callback_query(F.data == 'admin_save_question', AddQuestionState.accept)
 async def on_admin_add_question_state_accept(callback: types.CallbackQuery, state: FSMContext, db):
+    await callback.answer('Умпешно сохранен')
+    await callback.message.edit_reply_markup(reply_markup=None)
+
     data = await state.get_data()
     question = data.get('question')
     answer = data.get('answer')
