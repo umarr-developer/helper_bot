@@ -2,7 +2,9 @@ from aiogram import types, F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from sqlalchemy.orm import sessionmaker
 
+from src.keyboards.list_keyboard import FAQListKeyboard
 from src.models.questions import Question
 
 router = Router()
@@ -85,3 +87,46 @@ async def on_admin_add_question_state_accept(callback: types.CallbackQuery, stat
     await callback.message.answer(text)
 
     await state.clear()
+
+
+@router.callback_query(F.data == 'admin_faq_list', StateFilter(None))
+@router.callback_query(F.data.startswith('admin-faq-action'), StateFilter(None))
+async def on_admin_faq_list(callback: types.CallbackQuery, db: sessionmaker):
+    await callback.answer()
+
+    text = 'Список вопросов'
+
+    buttons = await FAQListKeyboard.get_buttons(db, 'admin-faq-question')
+    keyboard = FAQListKeyboard(buttons, 'admin-faq-action')
+
+    if callback.data.startswith('admin-faq-action'):
+        prefix, index = callback.data.split('_')
+        await callback.message.edit_text(text, reply_markup=keyboard.as_keyboard(int(index)))
+        return
+
+    await callback.message.edit_reply_markup()
+    await callback.message.answer(text, reply_markup=keyboard.as_keyboard(0))
+
+
+@router.callback_query(F.data.startswith('admin-faq-question'))
+async def on_admin_faq_question(callback: types.CallbackQuery, db: sessionmaker):
+    await callback.answer()
+
+    prefix, index = callback.data.split('_')
+    question_id = int(index)
+    question = await Question.get(db, question_id)
+
+    text = question[0].answer
+    keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(text='✏️ Редактировать', callback_data='admin_edit_faq_question'),
+                types.InlineKeyboardButton(text='🚫 Удалить', callback_data='admin_delete_faq_question')
+            ],
+            [
+                types.InlineKeyboardButton(text='↩️ Назад', callback_data='admin-faq-action_0')
+            ]
+        ]
+    )
+
+    await callback.message.edit_text(text, reply_markup=keyboard)
