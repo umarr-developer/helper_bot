@@ -1,7 +1,7 @@
 from aiogram import types, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-
+from aiogram.filters import Command, StateFilter
 from src.models.questions import Question
 
 router = Router()
@@ -13,7 +13,7 @@ class AddQuestionState(StatesGroup):
     accept = State()
 
 
-@router.callback_query(F.data == 'admin_manage_faq')
+@router.callback_query(F.data == 'admin_manage_faq', StateFilter(None))
 async def on_admin_faq(callback: types.CallbackQuery):
     text = 'Раздел с часто задаваемыми вопросами'
     keyboard = types.InlineKeyboardMarkup(
@@ -29,7 +29,7 @@ async def on_admin_faq(callback: types.CallbackQuery):
     await callback.message.answer(text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data == 'admin_add_question')
+@router.callback_query(F.data == 'admin_add_question', StateFilter(None))
 async def on_admin_add_question(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_reply_markup(reply_markup=None)

@@ -1,10 +1,11 @@
 from aiogram import types, Router, F
 from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 
 router = Router()
 
 
-@router.message(Command(commands=['admin']))
+@router.message(Command(commands=['admin']), StateFilter(None))
 async def on_admin_panel(message: types.Message):
     text = '↘️ Панель администратора'
     keyboard = types.InlineKeyboardMarkup(
@@ -33,5 +34,3 @@ async def on_admin_panel(message: types.Message):
     )
 
     await message.answer(text, reply_markup=keyboard)
-
-
