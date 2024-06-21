@@ -23,7 +23,8 @@ class EditQuestionState(StatesGroup):
 
 @router.callback_query(F.data == 'admin_manage_faq', StateFilter(None))
 async def on_admin_faq(callback: types.CallbackQuery):
-    text = 'Раздел с часто задаваемыми вопросами'
+    text = 'Вы перешли в <b>❓ FAQ</b> - раздел с часто задаваемыми вопросами\n\n' \
+           '<i>↘️ Выберите действие</i>'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -43,7 +44,8 @@ async def on_admin_add_question(callback: types.CallbackQuery, state: FSMContext
     await callback.message.edit_reply_markup(reply_markup=None)
 
     await state.set_state(AddQuestionState.question)
-    text = 'Введите вопрос'
+    text = 'Введите вопрос\n\n' \
+           '❕ <i>Вопрос должен быть текстового содержания</i>'
     await callback.message.answer(text)
 
 
@@ -52,7 +54,8 @@ async def on_admin_add_question_state_question(message: types.Message, state: FS
     await state.set_state(AddQuestionState.answer)
     await state.update_data({'question': message.text})
 
-    text = 'Введите ответ к вопросу'
+    text = 'Введите ответ для вашего вопрос\n\n' \
+           '<i>❕ Ответ тоже должен быть текстового содержания</i>'
     await message.answer(text)
 
 
@@ -62,9 +65,10 @@ async def on_admin_add_question_state_answer(message: types.Message, state: FSMC
     await state.update_data({'answer': message.text})
 
     data = await state.get_data()
-    text = 'Данные вопроса\n' \
-           f'Вопрос: {data.get("question")}\n' \
-           f'Ответ: {data.get("answer")}'
+    text = '📋 Данные вопроса\n\n' \
+           f'<b>Вопрос</b>: {data.get("question")}\n' \
+           f'<b>Ответ</b>: {data.get("answer")}\n\n' \
+           '<i>↘️ Выберите действие</i>'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -79,16 +83,17 @@ async def on_admin_add_question_state_answer(message: types.Message, state: FSMC
 
 @router.callback_query(F.data == 'admin_save_question', AddQuestionState.accept)
 async def on_admin_add_question_state_accept(callback: types.CallbackQuery, state: FSMContext, db):
-    await callback.answer('Умпешно сохранен')
+    await callback.answer('')
     await callback.message.edit_reply_markup(reply_markup=None)
 
     data = await state.get_data()
     question = data.get('question')
     answer = data.get('answer')
 
-    await Question.new(db, question, answer)
+    value = await Question.new(db, question, answer)
+    print(value)
 
-    text = 'Вопрос успешно сохранен'
+    text = '✅ Вопрос успешно сохранен'
     await callback.message.answer(text)
 
     await state.clear()
@@ -99,7 +104,7 @@ async def on_admin_add_question_state_accept(callback: types.CallbackQuery, stat
 async def on_admin_faq_list(callback: types.CallbackQuery, db: sessionmaker):
     await callback.answer()
 
-    text = 'Список вопросов'
+    text = '📄 Список вопросов'
 
     buttons = await FAQListKeyboard.get_buttons(db, 'admin-faq-question')
     keyboard = FAQListKeyboard(buttons, 'admin-faq-action')
@@ -120,7 +125,10 @@ async def on_admin_faq_question(callback: types.CallbackQuery, db: sessionmaker)
     question_id = int(index)
     question = await Question.get(db, question_id)
 
-    text = question[0].answer
+    text = f'<b>ID</b>: <code>{question[0].id}</code>\n\n' \
+           f'<b>Вопрос</b>: {question[0].question}\n' \
+           f'<b>Ответ</b>: {question[0].answer}\n/n' \
+           '<i>↘️ Выберите действие</i>'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -145,7 +153,7 @@ async def on_admin_delete_faq_question(callback: types.CallbackQuery, db):
 
     prefix, index = callback.data.split('_')
 
-    text = f'Запись с ID {index} удален'
+    text = f'❎ Вопрос с <b>ID</b> {index} удален'
 
     await Question.delete(db, int(index))
     await callback.message.answer(text)
@@ -160,17 +168,18 @@ async def on_admin_edit_faq_question(callback: types.CallbackQuery):
 
     prefix, index = callback.data.split('_')
 
-    text = 'Изменить вопрос'
+    text = '📝 Редактировать <b>вопрос</b>\n\n' \
+           '<i>↘️ Выберите действие</i>'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                types.InlineKeyboardButton(text='Изменить вопрос',
+                types.InlineKeyboardButton(text='✏️ Изменить вопрос',
                                            callback_data=f'admin-edit-question-faq_{index}'),
-                types.InlineKeyboardButton(text='Изменить ответ',
+                types.InlineKeyboardButton(text='✏️ Изменить ответ',
                                            callback_data=f'admin-edit-answer-faq_{index}')
             ],
             [
-                types.InlineKeyboardButton(text='Назад', callback_data='admin_faq_list')
+                types.InlineKeyboardButton(text='⬅️ Назад', callback_data='admin_faq_list')
             ]
         ]
     )
@@ -188,7 +197,8 @@ async def on_admin_edit_question_faq(callback: types.CallbackQuery, state: FSMCo
     prefix, index = callback.data.split('_')
     await state.update_data({'id': index})
 
-    text = 'Введите новый вопрос'
+    text = 'Введите новый вопрос\n\n' \
+           '❕ <i>Вопрос должен быть текстового содержания</i>'
     await callback.message.answer(text)
 
 
@@ -201,7 +211,7 @@ async def on_admin_edit_question_faq_state(message: types.Message, state: FSMCon
 
     await Question.edit_question(db, int(_id), question)
 
-    text = 'Данные обновлены'
+    text = '☑️ Данные вопроса успешно обновлены обновлены'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -224,7 +234,8 @@ async def on_admin_edit_answer_faq(callback: types.CallbackQuery, state: FSMCont
     prefix, index = callback.data.split('_')
     await state.update_data({'id': index})
 
-    text = 'Введите новый ответ'
+    text = 'Введите новый ответ\n\n' \
+           '❕ <i>Ответ должен быть текстового содержания</i>'
     await callback.message.answer(text)
 
 
@@ -237,7 +248,7 @@ async def on_admin_edit_answer_faq_state(message: types.Message, state: FSMConte
 
     await Question.edit_answer(db, int(_id), answer)
 
-    text = 'Данные обновлены'
+    text = '☑️ Данные вопроса успешно обновлены обновлены'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
