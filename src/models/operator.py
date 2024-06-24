@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Sequence, Date, insert, BigInteger, ForeignKey, select
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy import Column, Integer, Sequence, Date, insert, BigInteger, ForeignKey, select, String
+from sqlalchemy.orm import sessionmaker
 
 from src.service.database import Base
 
@@ -10,6 +10,7 @@ class Operator(Base):
     __tablename__ = 'operators'
 
     id = Column(Integer, Sequence('id'), primary_key=True)
+    username = Column(String(length=255))
     user_id = Column(BigInteger, ForeignKey('users.user_id'))
 
     created_on = Column(Date, default=datetime.now)
