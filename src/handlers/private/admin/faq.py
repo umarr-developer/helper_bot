@@ -127,7 +127,7 @@ async def on_admin_faq_question(callback: types.CallbackQuery, db: sessionmaker)
 
     text = f'<b>ID</b>: <code>{question[0].id}</code>\n\n' \
            f'<b>Вопрос</b>: {question[0].question}\n' \
-           f'<b>Ответ</b>: {question[0].answer}\n/n' \
+           f'<b>Ответ</b>: {question[0].answer}\n\n' \
            '<i>↘️ Выберите действие</i>'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
