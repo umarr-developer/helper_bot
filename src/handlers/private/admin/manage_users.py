@@ -48,7 +48,8 @@ async def on_manage_users_search(message: types.Message, db: sessionmaker, state
         await message.answer(text)
         return
 
-    text = f'Найден пользователь с ID {user[0].id}'
+    text = f'Найден пользователь с <b>ID</b> <code>{user[0].user_id}</code>\n' \
+           '↘️ Выберите действие с пользоватлем'
     keyboard = UserManageSwitchKeyboard(user[0])
     await message.answer(text, reply_markup=keyboard.as_keyboard())
     await state.clear()
@@ -56,7 +57,6 @@ async def on_manage_users_search(message: types.Message, db: sessionmaker, state
 
 @router.callback_query(F.data.startswith('admin-block-user'))
 async def on_manage_user_block_user(callback: types.CallbackQuery, db: sessionmaker):
-    print(callback.data)
     prefix, user_id = callback.data.split('_')
     user_id = int(user_id)
 
@@ -69,11 +69,58 @@ async def on_manage_user_block_user(callback: types.CallbackQuery, db: sessionma
 
 @router.callback_query(F.data.startswith('admin-unblock-user'))
 async def on_manage_user_block_user(callback: types.CallbackQuery, db: sessionmaker):
-    print(callback.data)
     prefix, user_id = callback.data.split('_')
     user_id = int(user_id)
 
     await User.unblock(db, user_id)
+
+    user = await User.get(db, user_id)
+    keyboard = UserManageSwitchKeyboard(user[0])
+    await callback.message.edit_reply_markup(reply_markup=keyboard.as_keyboard())
+
+
+@router.callback_query(F.data.startswith('admin-block-call-operator'))
+async def on_manage_user_block_user(callback: types.CallbackQuery, db: sessionmaker):
+    prefix, user_id = callback.data.split('_')
+    user_id = int(user_id)
+
+    await User.block_call_operator(db, user_id)
+
+    user = await User.get(db, user_id)
+    keyboard = UserManageSwitchKeyboard(user[0])
+    await callback.message.edit_reply_markup(reply_markup=keyboard.as_keyboard())
+
+
+@router.callback_query(F.data.startswith('admin-unblock-call-operator'))
+async def on_manage_user_block_user(callback: types.CallbackQuery, db: sessionmaker):
+    prefix, user_id = callback.data.split('_')
+    user_id = int(user_id)
+
+    await User.unblock_call_operator(db, user_id)
+
+    user = await User.get(db, user_id)
+    keyboard = UserManageSwitchKeyboard(user[0])
+    await callback.message.edit_reply_markup(reply_markup=keyboard.as_keyboard())
+
+
+@router.callback_query(F.data.startswith('admin-block-send-ticket'))
+async def on_manage_user_block_user(callback: types.CallbackQuery, db: sessionmaker):
+    prefix, user_id = callback.data.split('_')
+    user_id = int(user_id)
+
+    await User.block_send_ticket(db, user_id)
+
+    user = await User.get(db, user_id)
+    keyboard = UserManageSwitchKeyboard(user[0])
+    await callback.message.edit_reply_markup(reply_markup=keyboard.as_keyboard())
+
+
+@router.callback_query(F.data.startswith('admin-unblock-send-ticket'))
+async def on_manage_user_block_user(callback: types.CallbackQuery, db: sessionmaker):
+    prefix, user_id = callback.data.split('_')
+    user_id = int(user_id)
+
+    await User.unblock_send_ticket(db, user_id)
 
     user = await User.get(db, user_id)
     keyboard = UserManageSwitchKeyboard(user[0])
