@@ -1,11 +1,13 @@
+import asyncio
+
 from aiogram import types, F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from sqlalchemy.orm import sessionmaker
 
-from src.keyboards.list_keyboard import FAQListKeyboard
-from src.models.questions import Question
+from src.keyboards import FAQListKeyboard
+from src.models import Question
 
 router = Router()
 
@@ -21,25 +23,29 @@ class EditQuestionState(StatesGroup):
     answer = State()
 
 
-@router.callback_query(F.data == 'admin_manage_faq', StateFilter(None))
-async def on_admin_faq(callback: types.CallbackQuery):
+@router.callback_query(F.data == 'admin-manage-faq', StateFilter(None))
+async def on_faq(callback: types.CallbackQuery):
+    await callback.answer('➡️ Переход в ❓ Вопросы FAQ')
+
     text = 'Вы перешли в <b>❓ FAQ</b> - раздел с часто задаваемыми вопросами\n\n' \
            '<i>↘️ Выберите действие</i>'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                types.InlineKeyboardButton(text='➕ Добавить вопрос', callback_data='admin_add_question')
+                types.InlineKeyboardButton(text='➕ Добавить вопрос',
+                                           callback_data='add-question')
             ],
             [
-                types.InlineKeyboardButton(text='📒 Перейти к списку', callback_data='admin_faq_list')
+                types.InlineKeyboardButton(text='📒 Перейти к списку',
+                                           callback_data='faq-list')
             ]
         ]
     )
     await callback.message.answer(text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data == 'admin_add_question', StateFilter(None))
-async def on_admin_add_question(callback: types.CallbackQuery, state: FSMContext):
+@router.callback_query(F.data == 'add-question', StateFilter(None))
+async def on_add_faq(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_reply_markup(reply_markup=None)
 
@@ -50,7 +56,7 @@ async def on_admin_add_question(callback: types.CallbackQuery, state: FSMContext
 
 
 @router.message(AddQuestionState.question)
-async def on_admin_add_question_state_question(message: types.Message, state: FSMContext):
+async def on_add_faq_question(message: types.Message, state: FSMContext):
     await state.set_state(AddQuestionState.answer)
     await state.update_data({'question': message.text})
 
@@ -60,7 +66,7 @@ async def on_admin_add_question_state_question(message: types.Message, state: FS
 
 
 @router.message(AddQuestionState.answer)
-async def on_admin_add_question_state_answer(message: types.Message, state: FSMContext):
+async def on_add_faq_answer(message: types.Message, state: FSMContext):
     await state.set_state(AddQuestionState.accept)
     await state.update_data({'answer': message.text})
 
@@ -72,8 +78,8 @@ async def on_admin_add_question_state_answer(message: types.Message, state: FSMC
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                types.InlineKeyboardButton(text='✅ Сохранить', callback_data='admin_save_question'),
-                types.InlineKeyboardButton(text='❌ Отмена', callback_data='admin_cancel')
+                types.InlineKeyboardButton(text='✅ Сохранить', callback_data='save-question'),
+                types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel')
             ]
         ]
     )
@@ -81,35 +87,47 @@ async def on_admin_add_question_state_answer(message: types.Message, state: FSMC
     await message.answer(text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data == 'admin_save_question', AddQuestionState.accept)
-async def on_admin_add_question_state_accept(callback: types.CallbackQuery, state: FSMContext, db):
+@router.callback_query(F.data == 'save-question', AddQuestionState.accept)
+async def on_add_question_accept(callback: types.CallbackQuery, state: FSMContext, db: sessionmaker):
     await callback.answer('')
-    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.edit_reply_markup()
 
     data = await state.get_data()
     question = data.get('question')
     answer = data.get('answer')
 
-    value = await Question.new(db, question, answer)
-    print(value)
+    await Question.new(db, question, answer)
 
     text = '✅ Вопрос успешно сохранен'
-    await callback.message.answer(text)
+    keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text='↖️ Назад в список',
+                    callback_data='faq-list'
+                )
+            ]
+        ]
+    )
+    await callback.message.answer(text, reply_markup=keyboard)
 
     await state.clear()
 
+    await asyncio.sleep(0.5)
 
-@router.callback_query(F.data == 'admin_faq_list', StateFilter(None))
-@router.callback_query(F.data.startswith('admin-faq-action'), StateFilter(None))
-async def on_admin_faq_list(callback: types.CallbackQuery, db: sessionmaker):
+
+@router.callback_query(F.data == 'faq-list', StateFilter(None))
+@router.callback_query(F.data.startswith('faq-action'), StateFilter(None))
+async def on_faq_list(callback: types.CallbackQuery, db: sessionmaker):
     await callback.answer()
+    await callback.message.edit_reply_markup()
 
     text = '📄 Список вопросов'
 
-    buttons = await FAQListKeyboard.get_buttons(db, 'admin-faq-question')
-    keyboard = FAQListKeyboard(buttons, 'admin-faq-action')
+    buttons = await FAQListKeyboard.get_buttons(db, 'faq-question')
+    keyboard = FAQListKeyboard(buttons, 'faq-action')
 
-    if callback.data.startswith('admin-faq-action'):
+    if callback.data.startswith('faq-action'):
         prefix, index = callback.data.split('_')
         await callback.message.edit_text(text, reply_markup=keyboard.as_keyboard(int(index)))
         return
@@ -117,8 +135,8 @@ async def on_admin_faq_list(callback: types.CallbackQuery, db: sessionmaker):
     await callback.message.answer(text, reply_markup=keyboard.as_keyboard(0))
 
 
-@router.callback_query(F.data.startswith('admin-faq-question'), StateFilter(None))
-async def on_admin_faq_question(callback: types.CallbackQuery, db: sessionmaker):
+@router.callback_query(F.data.startswith('faq-question'), StateFilter(None))
+async def on_faq_question(callback: types.CallbackQuery, db: sessionmaker):
     await callback.answer()
 
     prefix, index = callback.data.split('_')
@@ -133,12 +151,12 @@ async def on_admin_faq_question(callback: types.CallbackQuery, db: sessionmaker)
         inline_keyboard=[
             [
                 types.InlineKeyboardButton(text='✏️ Редактировать',
-                                           callback_data=f'admin-edit-faq_{index}'),
+                                           callback_data=f'edit-faq_{index}'),
                 types.InlineKeyboardButton(text='🚫 Удалить',
-                                           callback_data=f'admin-delete-faq-question_{index}')
+                                           callback_data=f'delete-faq-question_{index}')
             ],
             [
-                types.InlineKeyboardButton(text='↩️ Назад', callback_data='admin-faq-action_0')
+                types.InlineKeyboardButton(text='↩️ Назад', callback_data='faq-action_0')
             ]
         ]
     )
@@ -146,40 +164,45 @@ async def on_admin_faq_question(callback: types.CallbackQuery, db: sessionmaker)
     await callback.message.edit_text(text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data.startswith('admin-delete-faq'), StateFilter(None))
-async def on_admin_delete_faq_question(callback: types.CallbackQuery, db):
+@router.callback_query(F.data.startswith('delete-faq'), StateFilter(None))
+async def on_delete_faq(callback: types.CallbackQuery, db):
     await callback.message.edit_reply_markup()
     await callback.answer()
 
     prefix, index = callback.data.split('_')
 
     text = f'❎ Вопрос с <b>ID</b> {index} удален'
+    keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(text='↖️ Назад в список', callback_data='faq-list')
+            ]
+        ]
+    )
 
     await Question.delete(db, int(index))
-    await callback.message.answer(text)
-
-    await on_admin_faq_list(callback, db)
+    await callback.message.answer(text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data.startswith('admin-edit-faq'), StateFilter(None))
-async def on_admin_edit_faq_question(callback: types.CallbackQuery):
+@router.callback_query(F.data.startswith('edit-faq'), StateFilter(None))
+async def on_edit_faq_question(callback: types.CallbackQuery):
     await callback.answer()
     await callback.message.edit_reply_markup()
 
     prefix, index = callback.data.split('_')
 
     text = '📝 Редактировать <b>вопрос</b>\n\n' \
-           '<i>↘️ Выберите действие</i>'
+           '↘️ <i>Выберите действие</i>'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 types.InlineKeyboardButton(text='✏️ Изменить вопрос',
-                                           callback_data=f'admin-edit-question-faq_{index}'),
+                                           callback_data=f'edit-question-faq_{index}'),
                 types.InlineKeyboardButton(text='✏️ Изменить ответ',
-                                           callback_data=f'admin-edit-answer-faq_{index}')
+                                           callback_data=f'edit-answer-faq_{index}')
             ],
             [
-                types.InlineKeyboardButton(text='⬅️ Назад', callback_data='admin_faq_list')
+                types.InlineKeyboardButton(text='⬅️ Назад', callback_data='faq_list')
             ]
         ]
     )
@@ -187,8 +210,8 @@ async def on_admin_edit_faq_question(callback: types.CallbackQuery):
     await callback.message.answer(text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data.startswith('admin-edit-question-faq'), StateFilter(None))
-async def on_admin_edit_question_faq(callback: types.CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.startswith('edit-question-faq'), StateFilter(None))
+async def on_edit_faq_question(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_reply_markup()
 
@@ -203,7 +226,7 @@ async def on_admin_edit_question_faq(callback: types.CallbackQuery, state: FSMCo
 
 
 @router.message(EditQuestionState.question)
-async def on_admin_edit_question_faq_state(message: types.Message, state: FSMContext, db):
+async def on_edit_faq_new_question(message: types.Message, state: FSMContext, db):
     data = await state.get_data()
     _id = data.get('id')
 
@@ -211,11 +234,11 @@ async def on_admin_edit_question_faq_state(message: types.Message, state: FSMCon
 
     await Question.edit_question(db, int(_id), question)
 
-    text = '☑️ Данные вопроса успешно обновлены обновлены'
+    text = '☑️ Данные вопроса успешно обновлены'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                types.InlineKeyboardButton(text='Назад в список', callback_data='admin_faq_list')
+                types.InlineKeyboardButton(text='↖️ Назад в список', callback_data='faq-list')
             ]
         ]
     )
@@ -224,8 +247,8 @@ async def on_admin_edit_question_faq_state(message: types.Message, state: FSMCon
     await state.clear()
 
 
-@router.callback_query(F.data.startswith('admin-edit-answer-faq'), StateFilter(None))
-async def on_admin_edit_answer_faq(callback: types.CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.startswith('edit-answer-faq'), StateFilter(None))
+async def on_edit_faq_answer(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_reply_markup()
 
@@ -240,7 +263,7 @@ async def on_admin_edit_answer_faq(callback: types.CallbackQuery, state: FSMCont
 
 
 @router.message(EditQuestionState.answer)
-async def on_admin_edit_answer_faq_state(message: types.Message, state: FSMContext, db):
+async def on_edit_faq_new_answer(message: types.Message, state: FSMContext, db):
     data = await state.get_data()
     _id = data.get('id')
 
@@ -248,11 +271,11 @@ async def on_admin_edit_answer_faq_state(message: types.Message, state: FSMConte
 
     await Question.edit_answer(db, int(_id), answer)
 
-    text = '☑️ Данные вопроса успешно обновлены обновлены'
+    text = '☑️ Данные вопроса успешно обновлены'
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                types.InlineKeyboardButton(text='Назад в список', callback_data='admin_faq_list')
+                types.InlineKeyboardButton(text='↖️ Назад в список', callback_data='faq-list')
             ]
         ]
     )
