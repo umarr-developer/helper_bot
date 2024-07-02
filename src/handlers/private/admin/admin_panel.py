@@ -11,23 +11,23 @@ async def on_admin_panel(message: types.Message):
         inline_keyboard=[
             [
                 types.InlineKeyboardButton(text='👨‍🔧 Управление операторами',
-                                           callback_data='admin_manage_operators')
+                                           callback_data='admin-manage-operators')
             ],
             [
                 types.InlineKeyboardButton(text='👨‍💼 Пользователи',
-                                           callback_data='admin_manage_users'),
+                                           callback_data='admin-manage-users'),
                 types.InlineKeyboardButton(text='❓ Вопросы FAQ',
-                                           callback_data='admin_manage_faq')
+                                           callback_data='admin-manage-faq')
             ],
             [
                 types.InlineKeyboardButton(text='⚙️ Настройки',
-                                           callback_data='admin_settings'),
+                                           callback_data='admin-settings'),
                 types.InlineKeyboardButton(text='📊 Статистика',
-                                           callback_data='admin_statistic')
+                                           callback_data='admin-statistic')
             ],
             [
                 types.InlineKeyboardButton(text='↩️ Перейти в панель пользователя',
-                                           callback_data='admin_to_user_panel')
+                                           callback_data='admin-to-user-panel')
             ]
         ]
     )
