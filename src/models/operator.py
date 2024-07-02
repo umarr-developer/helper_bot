@@ -29,3 +29,10 @@ class Operator(Base):
         async with db_session() as session:
             response = await session.execute(sql)
         return response.fetchone()
+
+    @classmethod
+    async def all(cls, db_session: sessionmaker) -> list[tuple['User']]:
+        sql = select(cls)
+        async with db_session() as session:
+            response = await session.execute(sql)
+        return response.fetchall()
