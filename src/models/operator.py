@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Sequence, Date, insert, BigInteger, ForeignKey, select, String
+from sqlalchemy import Column, Integer, Sequence, Date, insert, BigInteger, ForeignKey, select, String, Boolean
 from sqlalchemy.orm import sessionmaker
 
 from src.service.database import Base
@@ -12,6 +12,7 @@ class Operator(Base):
     id = Column(Integer, Sequence('id'), primary_key=True)
     username = Column(String(length=255))
     user_id = Column(BigInteger, ForeignKey('users.user_id'))
+    active = Column(Boolean, default=False)
 
     created_on = Column(Date, default=datetime.now)
     update_on = Column(Date, default=datetime.now, onupdate=datetime.now)
