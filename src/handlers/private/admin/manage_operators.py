@@ -12,7 +12,6 @@ router = Router()
 
 class AddOperatorState(StatesGroup):
     search = State()
-    username = State()
 
 
 @router.callback_query(F.data == 'admin-manage-operators', StateFilter(None))
@@ -42,10 +41,10 @@ async def on_manage_operators_add_operator(callback: types.CallbackQuery, state:
     text = 'Введите <b>ID</b> оператора. 👨‍💼 <b>Оператор</b> должен быть а базе данных пользователей!'
     await callback.message.answer(text)
 
-    await state.set_state('add_operator')
+    await state.set_state(AddOperatorState.search)
 
 
-@router.message(StateFilter('add-operator'))
+@router.message(AddOperatorState.search)
 async def on_manage_operators_add_operator_search(message: types.Message,
                                                   db: sessionmaker,
                                                   state: FSMContext,
